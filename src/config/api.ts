@@ -1,7 +1,7 @@
 
 // API Configuration
 // Change this URL to point to your backend API
-export const API_BASE_URL = 'http://localhost:3000/api';
+export const API_BASE_URL = 'http://localhost:3000/';
 
 // Mapbox Configuration
 // Add your Mapbox public token here
