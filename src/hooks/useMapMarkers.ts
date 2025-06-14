@@ -43,6 +43,9 @@ export const useMapMarkers = (
       });
     }
 
+    // Collect all coordinates for bounds calculation
+    const allCoordinates: [number, number][] = [];
+
     // Add markers and routes for each trip
     trips.forEach((trip, tripIndex) => {
       const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
@@ -50,6 +53,9 @@ export const useMapMarkers = (
 
       trip.json.orders.forEach((order) => {
         order.tasks.forEach((task) => {
+          // Add coordinates to bounds calculation
+          allCoordinates.push([task.lon, task.lat]);
+
           // Create marker element
           const markerElement = document.createElement('div');
           markerElement.className = 'trip-marker';
@@ -149,5 +155,27 @@ export const useMapMarkers = (
         });
       }
     });
+
+    // Center map around all points if we have coordinates
+    if (allCoordinates.length > 0) {
+      if (allCoordinates.length === 1) {
+        // If only one point, center on it with a reasonable zoom
+        map.flyTo({
+          center: allCoordinates[0],
+          zoom: 14,
+          duration: 1000
+        });
+      } else {
+        // If multiple points, fit bounds
+        const bounds = new mapboxgl.LngLatBounds();
+        allCoordinates.forEach(coord => bounds.extend(coord));
+        
+        map.fitBounds(bounds, {
+          padding: 50,
+          duration: 1000,
+          maxZoom: 16
+        });
+      }
+    }
   }, [trips, mapReady, map, onTripSelect]);
 };
