@@ -1,10 +1,9 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Clock, Package } from 'lucide-react';
+import EnhancedTripCard from './EnhancedTripCard';
+import { Navigation, Package, Clock, MapPin } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -213,14 +212,14 @@ const TripMap: React.FC<TripMapProps> = ({ trips, mapboxToken }) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-full bg-gray-50">
       {/* Map Container */}
       <div className="flex-1 relative">
         <div ref={mapContainer} className="absolute inset-0" />
         
         {/* Trip Stats Overlay */}
         <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-sm">
-          <h3 className="font-semibold text-lg mb-2">Trip Overview</h3>
+          <h3 className="font-semibold text-lg mb-2">Current Tick Overview</h3>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Navigation className="h-4 w-4 text-blue-500" />
@@ -245,7 +244,8 @@ const TripMap: React.FC<TripMapProps> = ({ trips, mapboxToken }) => {
       {/* Trip Details Sidebar */}
       <div className="w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-4 border-b">
-          <h2 className="text-xl font-bold">Trip Details</h2>
+          <h2 className="text-xl font-bold">Active Trips</h2>
+          <p className="text-sm text-gray-600">{trips.length} trips in current tick</p>
         </div>
         
         <div className="p-4 space-y-4">
@@ -254,51 +254,22 @@ const TripMap: React.FC<TripMapProps> = ({ trips, mapboxToken }) => {
             const colorClass = colors[index % colors.length];
             
             return (
-              <Card 
-                key={trip.id} 
-                className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-                  selectedTrip?.id === trip.id ? 'ring-2 ring-blue-500' : ''
-                }`}
+              <EnhancedTripCard
+                key={trip.id}
+                trip={trip}
+                colorClass={colorClass}
+                isSelected={selectedTrip?.id === trip.id}
                 onClick={() => setSelectedTrip(trip)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-3 h-3 rounded-full ${colorClass}`} />
-                  <h3 className="font-semibold">Driver {trip.json.driver_id}</h3>
-                </div>
-                
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex justify-between">
-                    <span>Orders:</span>
-                    <span>{trip.json.orders.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Distance:</span>
-                    <span>{trip.json.distance.toFixed(1)} km</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Duration:</span>
-                    <span>{formatDuration(trip.json.duration)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Start:</span>
-                    <span>{new Date(trip.json.start_time).toLocaleTimeString()}</span>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {trip.json.orders.some(o => o.has_grocery) && (
-                    <Badge variant="secondary" className="text-xs">Grocery</Badge>
-                  )}
-                  {trip.json.orders.some(o => o.has_coffee) && (
-                    <Badge variant="secondary" className="text-xs">Coffee</Badge>
-                  )}
-                  {trip.json.orders.some(o => o.has_hot_food) && (
-                    <Badge variant="secondary" className="text-xs">Hot Food</Badge>
-                  )}
-                </div>
-              </Card>
+              />
             );
           })}
+          
+          {trips.length === 0 && (
+            <Card className="p-6 text-center">
+              <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-600">No trips available for this tick</p>
+            </Card>
+          )}
         </div>
       </div>
     </div>
