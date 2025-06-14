@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import TripMap from './TripMap';
-import SimulationSelector from './SimulationSelector';
+import RunSelector from './RunSelector';
 import TickNavigator from './TickNavigator';
 import MapboxTokenInput from './MapboxTokenInput';
-import SimulationSelectionScreen from './SimulationSelectionScreen';
+import RunSelectionScreen from './RunSelectionScreen';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 const TripMapContainer = () => {
   const [mapboxToken, setMapboxToken] = useState('');
   const [tokenSubmitted, setTokenSubmitted] = useState(false);
-  const [selectedSimulation, setSelectedSimulation] = useState<number | null>(null);
+  const [selectedRun, setSelectedRun] = useState<number | null>(null);
   const [currentTick, setCurrentTick] = useState(1);
   const [maxTick] = useState(10); // This should come from API
   const [trips, setTrips] = useState([]);
@@ -72,13 +72,13 @@ const TripMapContainer = () => {
     }
   ];
 
-  const fetchTrips = async (simulationId: number, tickNo: number) => {
+  const fetchTrips = async (runId: number, tickNo: number) => {
     setIsLoading(true);
     setError(null);
     
     try {
       // Replace with actual API call
-      const response = await fetch(`/api/trips?simulation_id=${simulationId}&tick_no=${tickNo}`);
+      const response = await fetch(`/api/trips?run_id=${runId}&tick_no=${tickNo}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch trips');
@@ -97,19 +97,19 @@ const TripMapContainer = () => {
   };
 
   useEffect(() => {
-    if (selectedSimulation) {
-      fetchTrips(selectedSimulation, currentTick);
+    if (selectedRun) {
+      fetchTrips(selectedRun, currentTick);
     }
-  }, [selectedSimulation, currentTick]);
+  }, [selectedRun, currentTick]);
 
   const handleTokenSubmit = (token: string) => {
     setMapboxToken(token);
     setTokenSubmitted(true);
   };
 
-  const handleSimulationChange = (simulationId: number) => {
-    setSelectedSimulation(simulationId);
-    setCurrentTick(1); // Reset to first tick when simulation changes
+  const handleRunChange = (runId: number) => {
+    setSelectedRun(runId);
+    setCurrentTick(1); // Reset to first tick when run changes
   };
 
   const handleTickChange = (tick: number) => {
@@ -120,11 +120,11 @@ const TripMapContainer = () => {
     return <MapboxTokenInput onTokenSubmit={handleTokenSubmit} />;
   }
 
-  if (!selectedSimulation) {
+  if (!selectedRun) {
     return (
-      <SimulationSelectionScreen
-        selectedSimulation={selectedSimulation}
-        onSimulationChange={handleSimulationChange}
+      <RunSelectionScreen
+        selectedRun={selectedRun}
+        onRunChange={handleRunChange}
       />
     );
   }
@@ -134,13 +134,13 @@ const TripMapContainer = () => {
       {/* Controls Sidebar */}
       <div className="w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-4 border-b">
-          <h2 className="text-xl font-bold">Trip Simulation</h2>
+          <h2 className="text-xl font-bold">Trip Run</h2>
         </div>
         
         <div className="p-4 space-y-4">
-          <SimulationSelector
-            selectedSimulation={selectedSimulation}
-            onSimulationChange={handleSimulationChange}
+          <RunSelector
+            selectedRun={selectedRun}
+            onRunChange={handleRunChange}
           />
           
           <TickNavigator
