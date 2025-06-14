@@ -3,15 +3,12 @@ import React, { useState, useEffect } from 'react';
 import TripMap from './TripMap';
 import RunSelector from './RunSelector';
 import TickNavigator from './TickNavigator';
-import MapboxTokenInput from './MapboxTokenInput';
 import RunSelectionScreen from './RunSelectionScreen';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { buildApiUrl } from '@/config/api';
+import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
 
 const TripMapContainer = () => {
-  const [mapboxToken, setMapboxToken] = useState('');
-  const [tokenSubmitted, setTokenSubmitted] = useState(false);
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
   const [currentTick, setCurrentTick] = useState(1);
   const [maxTick] = useState(10); // This should come from API
@@ -103,11 +100,6 @@ const TripMapContainer = () => {
     }
   }, [selectedRun, currentTick]);
 
-  const handleTokenSubmit = (token: string) => {
-    setMapboxToken(token);
-    setTokenSubmitted(true);
-  };
-
   const handleRunChange = (runId: number) => {
     setSelectedRun(runId);
     setCurrentTick(1); // Reset to first tick when run changes
@@ -116,10 +108,6 @@ const TripMapContainer = () => {
   const handleTickChange = (tick: number) => {
     setCurrentTick(tick);
   };
-
-  if (!tokenSubmitted) {
-    return <MapboxTokenInput onTokenSubmit={handleTokenSubmit} />;
-  }
 
   if (!selectedRun) {
     return (
@@ -173,7 +161,7 @@ const TripMapContainer = () => {
 
       {/* Map Container */}
       <div className="flex-1">
-        <TripMap trips={trips} mapboxToken={mapboxToken} />
+        <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
       </div>
     </div>
   );

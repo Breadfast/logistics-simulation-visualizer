@@ -3,6 +3,10 @@
 // Change this URL to point to your backend API
 export const API_BASE_URL = 'http://localhost:3000/api';
 
+// Mapbox Configuration
+// Add your Mapbox public token here
+export const MAPBOX_TOKEN = 'pk.eyJ1IjoieW91ci11c2VybmFtZSIsImEiOiJjbGVhc2QzZnMxMDBkM29wZ21xYXFpaXI3In0.example-token-replace-with-yours';
+
 // Helper function to build full API URLs
 export const buildApiUrl = (endpoint: string): string => {
   return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
