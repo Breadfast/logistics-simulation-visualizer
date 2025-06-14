@@ -1,41 +1,7 @@
 
 import { useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
-
-interface Task {
-  id: string;
-  lat: number;
-  lon: number;
-  service: string[];
-  task_type: 'pickup' | 'delivery';
-  start_time: string;
-  end_time: string;
-  late_time: number;
-}
-
-interface Order {
-  id: number;
-  tasks: Task[];
-  customer: { lat: number; lon: number };
-  start_time: string;
-  end_time: string;
-  has_grocery: boolean;
-  has_coffee: boolean;
-  has_hot_food: boolean;
-}
-
-interface Trip {
-  id: number;
-  json: {
-    orders: Order[];
-    distance: number;
-    duration: number;
-    driver_id: number;
-    start_time: string;
-    end_time: string;
-    order_of_events: string[];
-  };
-}
+import { Trip } from '@/types/trip';
 
 export const useMapMarkers = (
   map: mapboxgl.Map | null,

@@ -2,42 +2,8 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Clock, Package, Calendar } from 'lucide-react';
-
-interface Task {
-  id: string;
-  lat: number;
-  lon: number;
-  service: string[];
-  task_type: 'pickup' | 'delivery';
-  start_time: string;
-  end_time: string;
-  late_time: number;
-}
-
-interface Order {
-  id: number;
-  tasks: Task[];
-  customer: { lat: number; lon: number };
-  start_time: string;
-  end_time: string;
-  has_grocery: boolean;
-  has_coffee: boolean;
-  has_hot_food: boolean;
-}
-
-interface Trip {
-  id: number;
-  json: {
-    orders: Order[];
-    distance: number;
-    duration: number;
-    driver_id: number;
-    start_time: string;
-    end_time: string;
-    order_of_events: string[];
-  };
-}
+import { Package } from 'lucide-react';
+import { Trip } from '@/types/trip';
 
 interface EnhancedTripCardProps {
   trip: Trip;

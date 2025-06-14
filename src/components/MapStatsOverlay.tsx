@@ -1,19 +1,7 @@
 
 import React from 'react';
 import { Navigation, Package, Clock } from 'lucide-react';
-
-interface Trip {
-  id: number;
-  json: {
-    orders: Array<{
-      id: number;
-      tasks: Array<{
-        id: string;
-        task_type: 'pickup' | 'delivery';
-      }>;
-    }>;
-  };
-}
+import { Trip } from '@/types/trip';
 
 interface MapStatsOverlayProps {
   trips: Trip[];

@@ -3,19 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import EnhancedTripCard from './EnhancedTripCard';
 import { Package } from 'lucide-react';
-
-interface Trip {
-  id: number;
-  json: {
-    orders: Array<{
-      id: number;
-      tasks: Array<{
-        id: string;
-        task_type: 'pickup' | 'delivery';
-      }>;
-    }>;
-  };
-}
+import { Trip } from '@/types/trip';
 
 interface TripSidebarProps {
   trips: Trip[];
