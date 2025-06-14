@@ -14,7 +14,7 @@ import { Trip } from '@/types/trip';
 const TripMapContainer = () => {
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
   const [currentTick, setCurrentTick] = useState(1);
-  const [maxTick] = useState(10); // This should come from API
+  const [maxTick] = useState(300); // This should come from API
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
