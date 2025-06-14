@@ -39,6 +39,7 @@ export interface Trip {
     start_time: string;
     end_time: string;
     order_of_events: string[];
+    late_time?: number;
   };
   created_at: string;
   updated_at: string;

@@ -16,6 +16,33 @@ export const useMapMarkers = (
     const existingMarkers = document.querySelectorAll('.mapboxgl-marker');
     existingMarkers.forEach(marker => marker.remove());
 
+    // Clear existing route layers and sources
+    const layers = map.getStyle().layers;
+    if (layers) {
+      layers.forEach((layer) => {
+        if (layer.id.startsWith('route-')) {
+          try {
+            map.removeLayer(layer.id);
+          } catch (e) {
+            // Layer might not exist, ignore error
+          }
+        }
+      });
+    }
+
+    const sources = map.getStyle().sources;
+    if (sources) {
+      Object.keys(sources).forEach((sourceId) => {
+        if (sourceId.startsWith('route-')) {
+          try {
+            map.removeSource(sourceId);
+          } catch (e) {
+            // Source might not exist, ignore error
+          }
+        }
+      });
+    }
+
     // Add markers and routes for each trip
     trips.forEach((trip, tripIndex) => {
       const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6'];
@@ -93,11 +120,6 @@ export const useMapMarkers = (
 
       if (coordinates.length > 1) {
         const routeId = `route-${tripIndex}`;
-        
-        if (map.getSource(routeId)) {
-          map.removeLayer(routeId);
-          map.removeSource(routeId);
-        }
 
         map.addSource(routeId, {
           type: 'geojson',
