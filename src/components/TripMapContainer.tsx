@@ -7,6 +7,7 @@ import MapboxTokenInput from './MapboxTokenInput';
 import RunSelectionScreen from './RunSelectionScreen';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { buildApiUrl } from '@/config/api';
 
 const TripMapContainer = () => {
   const [mapboxToken, setMapboxToken] = useState('');
@@ -77,8 +78,8 @@ const TripMapContainer = () => {
     setError(null);
     
     try {
-      // Replace with actual API call
-      const response = await fetch(`/api/trips?run_id=${runId}&tick_no=${tickNo}`);
+      // Use the configured API base URL
+      const response = await fetch(buildApiUrl(`/trips?run_id=${runId}&tick_no=${tickNo}`));
       
       if (!response.ok) {
         throw new Error('Failed to fetch trips');
