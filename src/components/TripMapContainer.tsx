@@ -7,19 +7,27 @@ import RunSelectionScreen from './RunSelectionScreen';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
+import { Trip } from '@/types/trip';
 
 const TripMapContainer = () => {
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
   const [currentTick, setCurrentTick] = useState(1);
   const [maxTick] = useState(10); // This should come from API
-  const [trips, setTrips] = useState([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Dummy data for fallback
-  const dummyTrips = [
+  const dummyTrips: Trip[] = [
     {
       id: 24092,
+      run_id: 1,
+      tick: 1,
+      created_at: "2025-04-10T00:00:00.000Z",
+      updated_at: "2025-04-10T00:00:00.000Z",
+      latency: 0,
+      dead_head_time: 0,
+      assignment_time: "2025-04-10T00:00:00.000Z",
       json: {
         orders: [
           {
@@ -75,15 +83,20 @@ const TripMapContainer = () => {
     setError(null);
     
     try {
-      // Use the configured API base URL
-      const response = await fetch(buildApiUrl(`/trips?run_id=${runId}&tick_no=${tickNo}`));
+      console.log(`Fetching trips for run_id=${runId}, tick=${tickNo}`);
+      const response = await fetch(buildApiUrl(`/trips?run_id=${runId}&tick=${tickNo}`));
       
       if (!response.ok) {
         throw new Error('Failed to fetch trips');
       }
       
       const data = await response.json();
-      setTrips(data.trips || []);
+      console.log('API Response:', data);
+      
+      // API returns array directly, not wrapped in trips property
+      const tripsData = Array.isArray(data) ? data : [];
+      console.log('Processed trips data:', tripsData);
+      setTrips(tripsData);
     } catch (err) {
       console.error('Error fetching trips:', err);
       setError('Failed to load trips. Using dummy data.');
@@ -156,6 +169,15 @@ const TripMapContainer = () => {
               </div>
             </Card>
           )}
+
+          <Card className="p-3">
+            <div className="text-sm">
+              <div className="font-medium mb-1">Debug Info:</div>
+              <div>Trips loaded: {trips.length}</div>
+              <div>Current tick: {currentTick}</div>
+              <div>Selected run: {selectedRun}</div>
+            </div>
+          </Card>
         </div>
       </div>
 

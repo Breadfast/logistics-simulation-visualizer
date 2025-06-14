@@ -24,10 +24,13 @@ export interface Order {
   received_at?: string;
   segment_sla?: string;
   deadline_date?: string;
+  duration_from_previous?: number;
+  pickup_to_delivery_time?: number;
 }
 
 export interface Trip {
   id: number;
+  run_id: number;
   json: {
     orders: Order[];
     distance: number;
@@ -37,4 +40,10 @@ export interface Trip {
     end_time: string;
     order_of_events: string[];
   };
+  created_at: string;
+  updated_at: string;
+  latency: number;
+  dead_head_time: number;
+  assignment_time: string;
+  tick: number;
 }
