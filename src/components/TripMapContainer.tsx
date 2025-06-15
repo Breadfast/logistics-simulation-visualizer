@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import TripMap from './TripMap';
 import RunSelector from './RunSelector';
 import TickNavigator from './TickNavigator';
 import RunSelectionScreen from './RunSelectionScreen';
+import TimelineView from './TimelineView';
 import { Card } from '@/components/ui/card';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Loader2, Map, Timeline } from 'lucide-react';
 import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
 import { Trip } from '@/types/trip';
 
@@ -16,6 +17,7 @@ const TripMapContainer = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'map' | 'timeline'>('map');
 
   // Dummy data for fallback
   const dummyTrips: Trip[] = [
@@ -152,6 +154,33 @@ const TripMapContainer = () => {
             isLoading={isLoading}
           />
 
+          {/* View Toggle */}
+          <Card className="p-3">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-700">View Mode</div>
+              <div className="flex gap-2">
+                <Button
+                  variant={activeView === 'map' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('map')}
+                  className="flex-1"
+                >
+                  <Map className="h-4 w-4 mr-1" />
+                  Map
+                </Button>
+                <Button
+                  variant={activeView === 'timeline' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActiveView('timeline')}
+                  className="flex-1"
+                >
+                  <Timeline className="h-4 w-4 mr-1" />
+                  Timeline
+                </Button>
+              </div>
+            </div>
+          </Card>
+
           {error && (
             <Card className="p-3 bg-yellow-50 border-yellow-200">
               <div className="flex items-center gap-2 text-yellow-800">
@@ -181,9 +210,15 @@ const TripMapContainer = () => {
         </div>
       </div>
 
-      {/* Map Container */}
+      {/* Main Content Container */}
       <div className="flex-1">
-        <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
+        {activeView === 'map' ? (
+          <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
+        ) : (
+          <div className="p-4 h-full overflow-y-auto">
+            <TimelineView trips={trips} currentTick={currentTick} />
+          </div>
+        )}
       </div>
     </div>
   );
