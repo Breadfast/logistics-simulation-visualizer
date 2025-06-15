@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TripMap from './TripMap';
 import RunSelector from './RunSelector';
 import TickNavigator from './TickNavigator';
@@ -6,7 +6,8 @@ import RunSelectionScreen from './RunSelectionScreen';
 import TimelineView from './TimelineView';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, Map, Calendar } from 'lucide-react';
+import { AlertCircle, Loader2, Map, Calendar, Info } from 'lucide-react';
+import TimelinePlaybackControls from './timeline/TimelinePlaybackControls';
 import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
 import { Trip } from '@/types/trip';
 
@@ -18,6 +19,13 @@ const TripMapContainer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'map' | 'timeline'>('map');
+
+  // Playback controls (play/pause, speed)
+  const [playing, setPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x default
+
+  // Reference to playback interval
+  const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Dummy data for fallback
   const dummyTrips: Trip[] = [
@@ -80,49 +88,126 @@ const TripMapContainer = () => {
     }
   ];
 
+  // --- Fetch trips for a given run/tick ---
   const fetchTrips = async (runId: number, tickNo: number) => {
     setIsLoading(true);
     setError(null);
-    
     try {
       console.log(`Fetching trips for run_id=${runId}, tick=${tickNo}`);
       const response = await fetch(buildApiUrl(`/trips?run_id=${runId}&tick=${tickNo}`));
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch trips');
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch trips');
       const data = await response.json();
-      console.log('API Response:', data);
-      
-      // API returns array directly, not wrapped in trips property
       const tripsData = Array.isArray(data) ? data : [];
-      console.log('Processed trips data:', tripsData);
       setTrips(tripsData);
     } catch (err) {
-      console.error('Error fetching trips:', err);
       setError('Failed to load trips. Using dummy data.');
-      // Use dummy data as fallback
       setTrips(dummyTrips);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // --- Fetch trips when run/tick change ---
   useEffect(() => {
     if (selectedRun) {
       fetchTrips(selectedRun, currentTick);
     }
+    // Pause playback if tick or run changes
+    setPlaying(false);
+    // Cleanup playback interval if needed
+    if (playbackIntervalRef.current) {
+      clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = null;
+    }
   }, [selectedRun, currentTick]);
 
+  // --- Playback effect: auto-advance ticks when playing ---
+  useEffect(() => {
+    // If not playing or already on last tick, stop
+    if (!playing || currentTick >= maxTick) {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      return;
+    }
+    // Do not auto-advance if current tick has no trips
+    if (trips.length === 0) {
+      setPlaying(false);
+      return;
+    }
+    // Advance ticks at variable speed
+    const interval = setInterval(() => {
+      setCurrentTick((prevTick) => {
+        if (prevTick < maxTick) {
+          return prevTick + 1;
+        } else {
+          setPlaying(false);
+          if (playbackIntervalRef.current) {
+            clearInterval(playbackIntervalRef.current);
+            playbackIntervalRef.current = null;
+          }
+          return prevTick;
+        }
+      });
+    }, 1000 / playbackSpeed);
+    playbackIntervalRef.current = interval;
+    return () => clearInterval(interval);
+    // We include trips in the dependency to detect empty tick
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, playbackSpeed, currentTick, maxTick, trips.length]);
+
+  // --- Keyboard controls for playback (optional) ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeView !== 'map' || isLoading) return;
+      if (e.code === 'Space') {
+        setPlaying((p) => !p);
+      }
+      if (e.code === 'ArrowRight') {
+        setCurrentTick((tick) => Math.min(tick + 1, maxTick));
+      }
+      if (e.code === 'ArrowLeft') {
+        setCurrentTick((tick) => Math.max(1, tick - 1));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeView, isLoading, maxTick]);
+
+  // --- Run/tick select handlers ---
   const handleRunChange = (runId: number) => {
     setSelectedRun(runId);
-    setCurrentTick(1); // Reset to first tick when run changes
+    setCurrentTick(1); // Reset to first tick on run change
+    setPlaying(false);
   };
-
   const handleTickChange = (tick: number) => {
     setCurrentTick(tick);
+    setPlaying(false);
   };
+
+  // --- Playback controls handlers ---
+  const handlePlay = () => {
+    // Only play if there are trips at this tick
+    if (trips.length > 0 && currentTick < maxTick) setPlaying(true);
+  };
+  const handlePause = () => setPlaying(false);
+  const handleRewind = () => {
+    setCurrentTick((tick) => Math.max(1, tick - 1));
+    setPlaying(false);
+  };
+  const handleFastForward = () => {
+    setCurrentTick((tick) => Math.min(maxTick, tick + 1));
+    setPlaying(false);
+  };
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackSpeed(speed);
+  };
+
+  // Trip fallback: disable controls if no trips at this tick
+  const tickHasTrips = trips.length > 0;
+
+  // --- Render ---
 
   if (!selectedRun) {
     return (
@@ -140,20 +225,17 @@ const TripMapContainer = () => {
         <div className="p-4 border-b">
           <h2 className="text-xl font-bold">Trip Run</h2>
         </div>
-        
         <div className="p-4 space-y-4">
           <RunSelector
             selectedRun={selectedRun}
             onRunChange={handleRunChange}
           />
-          
           <TickNavigator
             currentTick={currentTick}
             maxTick={maxTick}
             onTickChange={handleTickChange}
             isLoading={isLoading}
           />
-
           {/* View Toggle */}
           <Card className="p-3">
             <div className="space-y-2">
@@ -180,7 +262,7 @@ const TripMapContainer = () => {
               </div>
             </div>
           </Card>
-
+          {/* Error and loading */}
           {error && (
             <Card className="p-3 bg-yellow-50 border-yellow-200">
               <div className="flex items-center gap-2 text-yellow-800">
@@ -189,7 +271,6 @@ const TripMapContainer = () => {
               </div>
             </Card>
           )}
-
           {isLoading && (
             <Card className="p-3">
               <div className="flex items-center gap-2 text-blue-600">
@@ -198,32 +279,60 @@ const TripMapContainer = () => {
               </div>
             </Card>
           )}
-
           <Card className="p-3">
             <div className="text-sm">
               <div className="font-medium mb-1">Debug Info:</div>
               <div>Trips loaded: {trips.length}</div>
               <div>Current tick: {currentTick}</div>
               <div>Selected run: {selectedRun}</div>
+              <div>Playing: {playing ? "Yes" : "No"}</div>
             </div>
           </Card>
         </div>
       </div>
 
       {/* Main Content Container */}
-      <div className="flex-1">
-        {activeView === 'map' ? (
-          <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
-        ) : (
-          <div className="p-4 h-full overflow-y-auto">
-            {/* --- Pass onTickChange prop for playback! --- */}
-            <TimelineView
-              trips={trips}
+      <div className="flex-1 flex flex-col">
+        {/* Only show controls above the map view, not in the timeline! */}
+        {activeView === 'map' && (
+          <div className="p-4 bg-white border-b flex flex-col sm:flex-row items-center justify-between gap-4">
+            <TimelinePlaybackControls
               currentTick={currentTick}
-              onTickChange={setCurrentTick}
+              maxTick={maxTick}
+              minTick={1}
+              playing={playing}
+              speed={playbackSpeed}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onRewind={handleRewind}
+              onFastForward={handleFastForward}
+              onTickChange={handleTickChange}
+              onSpeedChange={handleSpeedChange}
+              disabled={isLoading || !tickHasTrips}
             />
+            {/* If no trips at this tick, show informational message */}
+            {!tickHasTrips && !isLoading && (
+              <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 rounded px-3 py-2">
+                <Info className="h-4 w-4" />
+                No trips data for this tick.
+              </div>
+            )}
           </div>
         )}
+        <div className="flex-1 overflow-hidden">
+          {activeView === 'map' ? (
+            <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
+          ) : (
+            <div className="p-4 h-full overflow-y-auto">
+              {/* Timeline does NOT get playback controls! */}
+              <TimelineView
+                trips={trips}
+                currentTick={currentTick}
+                onTickChange={setCurrentTick}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
