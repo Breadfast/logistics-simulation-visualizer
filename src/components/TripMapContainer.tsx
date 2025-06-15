@@ -112,18 +112,17 @@ const TripMapContainer = () => {
     if (selectedRun) {
       fetchTrips(selectedRun, currentTick);
     }
-    // Pause playback if tick or run changes
-    setPlaying(false);
-    // Cleanup playback interval if needed
+    // Cleanup playback interval if needed (don't pause automatically)
     if (playbackIntervalRef.current) {
       clearInterval(playbackIntervalRef.current);
       playbackIntervalRef.current = null;
     }
+    // Remove: setPlaying(false); // Don't auto-pause when tick/run change
   }, [selectedRun, currentTick]);
-
+  
   // --- Playback effect: auto-advance ticks when playing ---
   useEffect(() => {
-    // If not playing or already on last tick, stop
+    // If not playing or already on last tick, stop and cleanup interval
     if (!playing || currentTick >= maxTick) {
       if (playbackIntervalRef.current) {
         clearInterval(playbackIntervalRef.current);
@@ -131,9 +130,13 @@ const TripMapContainer = () => {
       }
       return;
     }
-    // Do not auto-advance if current tick has no trips
+    // If current tick has no trips, pause playback (informational)
     if (trips.length === 0) {
       setPlaying(false);
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
       return;
     }
     // Advance ticks at variable speed
@@ -153,7 +156,6 @@ const TripMapContainer = () => {
     }, 1000 / playbackSpeed);
     playbackIntervalRef.current = interval;
     return () => clearInterval(interval);
-    // We include trips in the dependency to detect empty tick
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, playbackSpeed, currentTick, maxTick, trips.length]);
 
@@ -179,16 +181,17 @@ const TripMapContainer = () => {
   const handleRunChange = (runId: number) => {
     setSelectedRun(runId);
     setCurrentTick(1); // Reset to first tick on run change
-    setPlaying(false);
+    setPlaying(false); // Pausing playback on run change is sensible UX
   };
   const handleTickChange = (tick: number) => {
     setCurrentTick(tick);
-    setPlaying(false);
+    // Do not forcibly pause here! User might want to scrub while playing
+    // setPlaying(false); // Remove this line
   };
 
   // --- Playback controls handlers ---
   const handlePlay = () => {
-    // Only play if there are trips at this tick
+    // Only play if there are trips at this tick & not at last tick
     if (trips.length > 0 && currentTick < maxTick) setPlaying(true);
   };
   const handlePause = () => setPlaying(false);
