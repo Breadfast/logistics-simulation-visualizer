@@ -11,8 +11,7 @@ import TimelineLegend from './timeline/TimelineLegend';
 import { 
   getAllEvents, 
   getDrivers, 
-  getExpandedTimeRange, 
-  generateTimeMarkers 
+  getExpandedTimeRange
 } from './timeline/timelineUtils';
 
 interface TimelineViewProps {
@@ -34,20 +33,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
   }
 
   const { minTime, maxTime } = getExpandedTimeRange(events);
-  const timeMarkers = generateTimeMarkers(minTime, maxTime);
-
-  console.log('Timeline Debug:', {
-    eventsCount: events.length,
-    minTime,
-    maxTime,
-    firstEventTime: events[0]?.time,
-    lastEventTime: events[events.length - 1]?.time,
-    timeRange: new Date(maxTime).getTime() - new Date(minTime).getTime(),
-    samplePositions: events.slice(0, 3).map(e => ({
-      time: e.time,
-      position: ((new Date(e.time).getTime() - new Date(minTime).getTime()) / (new Date(maxTime).getTime() - new Date(minTime).getTime())) * 100
-    }))
-  });
 
   return (
     <TooltipProvider>
@@ -58,7 +43,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
           <TimelineAxis
             minTime={minTime}
             maxTime={maxTime}
-            timeMarkers={timeMarkers}
             currentTick={currentTick}
           />
 
@@ -73,7 +57,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                   events={driverEvents}
                   minTime={minTime}
                   maxTime={maxTime}
-                  timeMarkers={timeMarkers}
                 />
               );
             })}

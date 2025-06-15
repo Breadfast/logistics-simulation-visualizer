@@ -3,22 +3,20 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Truck } from 'lucide-react';
 import EventMarker from './EventMarker';
-import { TimelineEvent, getTimePosition } from './timelineUtils';
+import { TimelineEvent } from './timelineUtils';
 
 interface DriverLaneProps {
   driverId: number;
   events: TimelineEvent[];
   minTime: string;
   maxTime: string;
-  timeMarkers: string[];
 }
 
 const DriverLane: React.FC<DriverLaneProps> = ({ 
   driverId, 
   events, 
   minTime, 
-  maxTime, 
-  timeMarkers 
+  maxTime
 }) => {
   return (
     <div className="relative">
@@ -33,18 +31,6 @@ const DriverLane: React.FC<DriverLaneProps> = ({
       </div>
       
       <div className="relative h-16 bg-gray-50 rounded-lg border-2 border-gray-200">
-        {/* Vertical gridlines for this lane */}
-        {timeMarkers.map((markerTime, index) => {
-          const position = getTimePosition(markerTime, minTime, maxTime);
-          return (
-            <div 
-              key={index}
-              className="absolute top-0 h-full w-px bg-gray-300 opacity-50"
-              style={{ left: `${position}%` }}
-            />
-          );
-        })}
-        
         {/* Events for this driver */}
         {events.map((event) => (
           <EventMarker

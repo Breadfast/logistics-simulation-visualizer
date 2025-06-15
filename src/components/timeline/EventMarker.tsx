@@ -33,10 +33,6 @@ const EventMarker: React.FC<EventMarkerProps> = ({ event, minTime, maxTime }) =>
               <MapPin className="h-4 w-4 text-white" />
             )}
           </div>
-          {/* Debug position label */}
-          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-1 rounded border">
-            {position.toFixed(1)}%
-          </div>
         </div>
       </TooltipTrigger>
       <TooltipContent 

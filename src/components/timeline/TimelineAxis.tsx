@@ -5,37 +5,26 @@ import { getTimePosition, formatTime } from './timelineUtils';
 interface TimelineAxisProps {
   minTime: string;
   maxTime: string;
-  timeMarkers: string[];
   currentTick: number;
 }
 
 const TimelineAxis: React.FC<TimelineAxisProps> = ({ 
   minTime, 
   maxTime, 
-  timeMarkers, 
   currentTick 
 }) => {
   return (
     <div className="relative mb-8">
       <div className="relative h-16 bg-gray-100 rounded-lg border-2">
-        {/* Time gridlines */}
-        {timeMarkers.map((markerTime, index) => {
-          const position = getTimePosition(markerTime, minTime, maxTime);
-          return (
-            <div key={index} className="absolute top-0 h-full">
-              <div 
-                className="w-px bg-gray-400 h-full opacity-70"
-                style={{ left: `${position}%` }}
-              />
-              <div 
-                className="absolute -bottom-8 transform -translate-x-1/2 text-xs text-gray-600 font-medium bg-white px-1 rounded"
-                style={{ left: `${position}%` }}
-              >
-                {formatTime(markerTime)}
-              </div>
-            </div>
-          );
-        })}
+        {/* Start time label */}
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 font-medium bg-white px-2 py-1 rounded border">
+          {formatTime(minTime)}
+        </div>
+        
+        {/* End time label */}
+        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-600 font-medium bg-white px-2 py-1 rounded border">
+          {formatTime(maxTime)}
+        </div>
         
         {/* Current time indicator */}
         <div 
