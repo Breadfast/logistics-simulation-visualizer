@@ -131,14 +131,14 @@ const TripMapContainer = () => {
       return;
     }
     // If current tick has no trips, pause playback (informational)
-    if (trips.length === 0) {
-      setPlaying(false);
-      if (playbackIntervalRef.current) {
-        clearInterval(playbackIntervalRef.current);
-        playbackIntervalRef.current = null;
-      }
-      return;
-    }
+    // if (trips.length === 0) {
+    //   setPlaying(false);
+    //   if (playbackIntervalRef.current) {
+    //     clearInterval(playbackIntervalRef.current);
+    //     playbackIntervalRef.current = null;
+    //   }
+    //   return;
+    // }
     // Advance ticks at variable speed
     const interval = setInterval(() => {
       setCurrentTick((prevTick) => {
@@ -157,7 +157,7 @@ const TripMapContainer = () => {
     playbackIntervalRef.current = interval;
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, playbackSpeed, currentTick, maxTick, trips.length]);
+  }, [playing, playbackSpeed, currentTick, maxTick]);
 
   // --- Keyboard controls for playback (optional) ---
   useEffect(() => {
