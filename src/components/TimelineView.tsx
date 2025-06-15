@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,15 +55,54 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
     return Array.from(drivers).sort();
   };
 
+  // Get expanded time range to ensure good spacing
+  const getExpandedTimeRange = (events: TimelineEvent[]): { minTime: string; maxTime: string } => {
+    if (events.length === 0) return { minTime: '', maxTime: '' };
+    
+    const times = events.map(e => new Date(e.time).getTime());
+    const minTimestamp = Math.min(...times);
+    const maxTimestamp = Math.max(...times);
+    
+    // Calculate the duration
+    const duration = maxTimestamp - minTimestamp;
+    
+    // If all events are within a very short time (less than 1 hour), expand the range
+    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
+    const minExpansion = oneHour; // Minimum 1 hour range
+    
+    let expandedMin = minTimestamp;
+    let expandedMax = maxTimestamp;
+    
+    if (duration < minExpansion) {
+      // Expand range to at least 1 hour, centered around the events
+      const center = (minTimestamp + maxTimestamp) / 2;
+      expandedMin = center - minExpansion / 2;
+      expandedMax = center + minExpansion / 2;
+    } else {
+      // Add 10% padding on each side
+      const padding = duration * 0.1;
+      expandedMin = minTimestamp - padding;
+      expandedMax = maxTimestamp + padding;
+    }
+    
+    return {
+      minTime: new Date(expandedMin).toISOString(),
+      maxTime: new Date(expandedMax).toISOString()
+    };
+  };
+
   // Convert time to position on timeline (0-100%)
   const getTimePosition = (eventTime: string, minTime: string, maxTime: string): number => {
     const eventTimestamp = new Date(eventTime).getTime();
     const minTimestamp = new Date(minTime).getTime();
     const maxTimestamp = new Date(maxTime).getTime();
     
-    if (maxTimestamp === minTimestamp) return 0;
+    if (maxTimestamp === minTimestamp) return 50; // Center if no range
     
-    return ((eventTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) * 100;
+    const position = ((eventTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) * 100;
+    
+    // Ensure position is within bounds and add some margin
+    return Math.max(2, Math.min(98, position));
   };
 
   // Format time for display
@@ -80,8 +120,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
     const maxTimestamp = new Date(maxTime).getTime();
     const duration = maxTimestamp - minTimestamp;
     
-    // Create 8-10 time markers across the timeline
-    const markerCount = 8;
+    // Create 6 evenly spaced time markers
+    const markerCount = 5; // This creates 6 markers (0 through 5)
     const markers: string[] = [];
     
     for (let i = 0; i <= markerCount; i++) {
@@ -104,9 +144,21 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
     );
   }
 
-  const minTime = events[0]?.time || '';
-  const maxTime = events[events.length - 1]?.time || '';
+  const { minTime, maxTime } = getExpandedTimeRange(events);
   const timeMarkers = generateTimeMarkers(minTime, maxTime);
+
+  console.log('Timeline Debug:', {
+    eventsCount: events.length,
+    minTime,
+    maxTime,
+    firstEventTime: events[0]?.time,
+    lastEventTime: events[events.length - 1]?.time,
+    timeRange: new Date(maxTime).getTime() - new Date(minTime).getTime(),
+    samplePositions: events.slice(0, 3).map(e => ({
+      time: e.time,
+      position: getTimePosition(e.time, minTime, maxTime)
+    }))
+  });
 
   return (
     <TooltipProvider>
@@ -119,7 +171,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
           </div>
 
           {/* Enhanced Time axis with gridlines */}
-          <div className="relative mb-6">
+          <div className="relative mb-8">
             {/* Main timeline container */}
             <div className="relative h-16 bg-gray-100 rounded-lg border-2">
               {/* Time gridlines */}
@@ -128,11 +180,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                 return (
                   <div key={index} className="absolute top-0 h-full">
                     <div 
-                      className="w-px bg-gray-300 h-full"
+                      className="w-px bg-gray-400 h-full opacity-70"
                       style={{ left: `${position}%` }}
                     />
                     <div 
-                      className="absolute -bottom-6 transform -translate-x-1/2 text-xs text-gray-600 font-medium"
+                      className="absolute -bottom-8 transform -translate-x-1/2 text-xs text-gray-600 font-medium bg-white px-1 rounded"
                       style={{ left: `${position}%` }}
                     >
                       {formatTime(markerTime)}
@@ -140,12 +192,6 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                   </div>
                 );
               })}
-              
-              {/* Start and end time labels */}
-              <div className="absolute inset-x-0 top-2 flex items-center justify-between px-4 text-sm font-bold text-gray-800">
-                <span className="bg-white px-2 py-1 rounded shadow-sm">{formatTime(minTime)}</span>
-                <span className="bg-white px-2 py-1 rounded shadow-sm">{formatTime(maxTime)}</span>
-              </div>
               
               {/* Current time indicator */}
               <div 
@@ -198,7 +244,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                     })}
                     
                     {/* Events for this driver */}
-                    {driverEvents.map((event) => {
+                    {driverEvents.map((event, eventIndex) => {
                       const position = getTimePosition(event.time, minTime, maxTime);
                       
                       return (
@@ -220,6 +266,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                                 ) : (
                                   <MapPin className="h-4 w-4 text-white" />
                                 )}
+                              </div>
+                              {/* Debug position label */}
+                              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 bg-white px-1 rounded border">
+                                {position.toFixed(1)}%
                               </div>
                             </div>
                           </TooltipTrigger>
