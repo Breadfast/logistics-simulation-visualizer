@@ -314,7 +314,7 @@ const TripMapContainer = () => {
               // Only disable Play and the slider if loading or no trips;
               // always keep arrows enabled except at tick limits!
               disabled={isLoading}
-              disablePlayButton={!tickHasTrips || isLoading}
+              disablePlayButton={isLoading}
               disableSlider={isLoading}
             />
             {/* If no trips at this tick, show informational message */}
