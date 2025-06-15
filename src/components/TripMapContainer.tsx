@@ -6,7 +6,7 @@ import RunSelectionScreen from './RunSelectionScreen';
 import TimelineView from './TimelineView';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, Map, Timeline } from 'lucide-react';
+import { AlertCircle, Loader2, Map, Calendar } from 'lucide-react';
 import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
 import { Trip } from '@/types/trip';
 
@@ -174,7 +174,7 @@ const TripMapContainer = () => {
                   onClick={() => setActiveView('timeline')}
                   className="flex-1"
                 >
-                  <Timeline className="h-4 w-4 mr-1" />
+                  <Calendar className="h-4 w-4 mr-1" />
                   Timeline
                 </Button>
               </div>
