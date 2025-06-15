@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +74,24 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
     });
   };
 
+  // Generate time markers for the timeline
+  const generateTimeMarkers = (minTime: string, maxTime: string): string[] => {
+    const minTimestamp = new Date(minTime).getTime();
+    const maxTimestamp = new Date(maxTime).getTime();
+    const duration = maxTimestamp - minTimestamp;
+    
+    // Create 8-10 time markers across the timeline
+    const markerCount = 8;
+    const markers: string[] = [];
+    
+    for (let i = 0; i <= markerCount; i++) {
+      const timestamp = minTimestamp + (duration * i / markerCount);
+      markers.push(new Date(timestamp).toISOString());
+    }
+    
+    return markers;
+  };
+
   const events = getAllEvents();
   const drivers = getDrivers();
   
@@ -89,6 +106,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
 
   const minTime = events[0]?.time || '';
   const maxTime = events[events.length - 1]?.time || '';
+  const timeMarkers = generateTimeMarkers(minTime, maxTime);
 
   return (
     <TooltipProvider>
@@ -100,30 +118,55 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
             <Badge variant="secondary">{events.length} events</Badge>
           </div>
 
-          {/* Time axis */}
-          <div className="relative h-12 bg-gray-100 rounded-lg mb-6 border-2">
-            <div className="absolute inset-x-0 top-0 h-full flex items-center justify-between px-4 text-sm font-medium text-gray-700">
-              <span>{formatTime(minTime)}</span>
-              <span>{formatTime(maxTime)}</span>
-            </div>
-            {/* Current time indicator - more prominent */}
-            <div 
-              className="absolute top-0 w-1 h-full bg-red-600 z-20 shadow-lg rounded-sm"
-              style={{ left: `${(currentTick - 1) * 100 / 10}%` }}
-            >
-              <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-600 rotate-45 border border-red-700"></div>
-              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-600 rotate-45 border border-red-700"></div>
-            </div>
-            {/* Current time label */}
-            <div 
-              className="absolute -top-8 transform -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded font-medium z-20"
-              style={{ left: `${(currentTick - 1) * 100 / 10}%` }}
-            >
-              Tick {currentTick}
+          {/* Enhanced Time axis with gridlines */}
+          <div className="relative mb-6">
+            {/* Main timeline container */}
+            <div className="relative h-16 bg-gray-100 rounded-lg border-2">
+              {/* Time gridlines */}
+              {timeMarkers.map((markerTime, index) => {
+                const position = getTimePosition(markerTime, minTime, maxTime);
+                return (
+                  <div key={index} className="absolute top-0 h-full">
+                    <div 
+                      className="w-px bg-gray-300 h-full"
+                      style={{ left: `${position}%` }}
+                    />
+                    <div 
+                      className="absolute -bottom-6 transform -translate-x-1/2 text-xs text-gray-600 font-medium"
+                      style={{ left: `${position}%` }}
+                    >
+                      {formatTime(markerTime)}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Start and end time labels */}
+              <div className="absolute inset-x-0 top-2 flex items-center justify-between px-4 text-sm font-bold text-gray-800">
+                <span className="bg-white px-2 py-1 rounded shadow-sm">{formatTime(minTime)}</span>
+                <span className="bg-white px-2 py-1 rounded shadow-sm">{formatTime(maxTime)}</span>
+              </div>
+              
+              {/* Current time indicator */}
+              <div 
+                className="absolute top-0 w-1 h-full bg-red-600 z-20 shadow-lg rounded-sm"
+                style={{ left: `${(currentTick - 1) * 100 / 10}%` }}
+              >
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-600 rotate-45 border border-red-700"></div>
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-600 rotate-45 border border-red-700"></div>
+              </div>
+              
+              {/* Current time label */}
+              <div 
+                className="absolute -top-8 transform -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded font-medium z-20"
+                style={{ left: `${(currentTick - 1) * 100 / 10}%` }}
+              >
+                Tick {currentTick}
+              </div>
             </div>
           </div>
 
-          {/* Driver lanes */}
+          {/* Driver lanes with enhanced gridlines */}
           <div className="space-y-6">
             {drivers.map((driverId) => {
               const driverEvents = events.filter(event => event.driverId === driverId);
@@ -140,8 +183,21 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
                     </Badge>
                   </div>
                   
-                  {/* Timeline lane */}
+                  {/* Timeline lane with gridlines */}
                   <div className="relative h-16 bg-gray-50 rounded-lg border-2 border-gray-200">
+                    {/* Vertical gridlines for this lane */}
+                    {timeMarkers.map((markerTime, index) => {
+                      const position = getTimePosition(markerTime, minTime, maxTime);
+                      return (
+                        <div 
+                          key={index}
+                          className="absolute top-0 h-full w-px bg-gray-300 opacity-50"
+                          style={{ left: `${position}%` }}
+                        />
+                      );
+                    })}
+                    
+                    {/* Events for this driver */}
                     {driverEvents.map((event) => {
                       const position = getTimePosition(event.time, minTime, maxTime);
                       
@@ -218,6 +274,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({ trips, currentTick }) => {
             <div className="flex items-center gap-2">
               <div className="w-6 h-1 bg-red-600 rounded"></div>
               <span className="text-sm text-gray-700 font-medium">Current Time (Tick {currentTick})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-px bg-gray-300"></div>
+              <span className="text-sm text-gray-700 font-medium">Time Markers</span>
             </div>
           </div>
         </div>
