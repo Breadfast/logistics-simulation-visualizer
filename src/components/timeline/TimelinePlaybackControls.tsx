@@ -110,7 +110,7 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
           disabled={disabled}
           className="flex-1"
         />
-        <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">
+        <span className="ml-4 text-xs text-gray-600 whitespace-nowrap">
           Tick {currentTick}/{maxTick}
         </span>
       </div>
@@ -135,3 +135,4 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
 };
 
 export default TimelinePlaybackControls;
+
