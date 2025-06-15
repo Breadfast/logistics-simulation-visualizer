@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Play, Pause, FastForward, Rewind } from "lucide-react";
@@ -17,6 +17,8 @@ interface TimelinePlaybackControlsProps {
   onTickChange: (tick: number) => void;
   onSpeedChange: (speed: number) => void;
   disabled?: boolean;
+  disablePlayButton?: boolean;
+  disableSlider?: boolean;
 }
 
 const speedOptions = [
@@ -39,8 +41,9 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
   onTickChange,
   onSpeedChange,
   disabled = false,
+  disablePlayButton = false,
+  disableSlider = false,
 }) => {
-  // Keyboard controls (space to play/pause, left/right for navigation)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (disabled) return;
@@ -84,7 +87,7 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
             size="icon"
             aria-label="Play"
             onClick={onPlay}
-            disabled={currentTick >= maxTick || disabled}
+            disabled={currentTick >= maxTick || disablePlayButton}
           >
             <Play className="h-5 w-5" />
           </Button>
@@ -107,7 +110,7 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
           min={minTick}
           max={maxTick}
           step={1}
-          disabled={disabled}
+          disabled={disableSlider}
           className="flex-1"
         />
         <span className="ml-4 text-xs text-gray-600 whitespace-nowrap">
@@ -135,4 +138,3 @@ const TimelinePlaybackControls: React.FC<TimelinePlaybackControlsProps> = ({
 };
 
 export default TimelinePlaybackControls;
-

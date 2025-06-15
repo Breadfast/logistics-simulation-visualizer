@@ -207,7 +207,7 @@ const TripMapContainer = () => {
     setPlaybackSpeed(speed);
   };
 
-  // Trip fallback: disable controls if no trips at this tick
+  // Trip fallback: does this tick have any trips?
   const tickHasTrips = trips.length > 0;
 
   // --- Render ---
@@ -311,7 +311,11 @@ const TripMapContainer = () => {
               onFastForward={handleFastForward}
               onTickChange={handleTickChange}
               onSpeedChange={handleSpeedChange}
-              disabled={isLoading || !tickHasTrips}
+              // Only disable Play and the slider if loading or no trips;
+              // always keep arrows enabled except at tick limits!
+              disabled={isLoading}
+              disablePlayButton={!tickHasTrips || isLoading}
+              disableSlider={isLoading}
             />
             {/* If no trips at this tick, show informational message */}
             {!tickHasTrips && !isLoading && (
