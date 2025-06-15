@@ -216,7 +216,12 @@ const TripMapContainer = () => {
           <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
         ) : (
           <div className="p-4 h-full overflow-y-auto">
-            <TimelineView trips={trips} currentTick={currentTick} />
+            {/* --- Pass onTickChange prop for playback! --- */}
+            <TimelineView
+              trips={trips}
+              currentTick={currentTick}
+              onTickChange={setCurrentTick}
+            />
           </div>
         )}
       </div>
