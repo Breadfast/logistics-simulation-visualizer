@@ -33,9 +33,9 @@ export interface Trip {
   run_id: number;
   json: {
     orders: Order[];
-    distance: number;
-    duration: number;
-    driver_id: number;
+    distance: number | null;
+    duration: number | null;
+    driver_id: number | null;
     start_time: string;
     end_time: string;
     order_of_events: string[];

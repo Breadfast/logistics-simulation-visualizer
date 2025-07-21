@@ -18,7 +18,8 @@ const EnhancedTripCard: React.FC<EnhancedTripCardProps> = ({
   isSelected,
   onClick,
 }) => {
-  const formatDuration = (seconds: number) => {
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return '0h 0m';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
@@ -47,7 +48,7 @@ const EnhancedTripCard: React.FC<EnhancedTripCardProps> = ({
     >
       <div className="flex items-center gap-2 mb-3">
         <div className={`w-3 h-3 rounded-full ${colorClass}`} />
-        <h3 className="font-semibold">Driver {trip.json.driver_id}</h3>
+        <h3 className="font-semibold">Driver {trip.json.driver_id || 'Unknown'}</h3>
         <Badge variant="outline" className="text-xs">Trip {trip.id}</Badge>
       </div>
 
@@ -80,11 +81,13 @@ const EnhancedTripCard: React.FC<EnhancedTripCardProps> = ({
       <div className="space-y-2 text-sm text-gray-600 mb-3">
         <div className="flex justify-between">
           <span>Orders:</span>
-          <span className="font-medium">{trip.json.orders.length}</span>
+          <span className="font-medium">{trip.json.orders?.length || 0}</span>
         </div>
         <div className="flex justify-between">
           <span>Distance:</span>
-          <span className="font-medium">{trip.json.distance.toFixed(1)} km</span>
+          <span className="font-medium">
+            {trip.json.distance ? `${trip.json.distance.toFixed(1)} km` : '0.0 km'}
+          </span>
         </div>
         <div className="flex justify-between">
           <span>Duration:</span>
@@ -93,23 +96,23 @@ const EnhancedTripCard: React.FC<EnhancedTripCardProps> = ({
         <div className="flex justify-between">
           <span>Tasks:</span>
           <span className="font-medium">
-            {trip.json.orders.reduce((acc, order) => acc + order.tasks.length, 0)}
+            {trip.json.orders?.reduce((acc, order) => acc + (order.tasks?.length || 0), 0) || 0}
           </span>
         </div>
       </div>
 
       {/* Service Types */}
       <div className="flex flex-wrap gap-1">
-        {trip.json.orders.some(o => o.has_grocery) && (
+        {trip.json.orders?.some(o => o.has_grocery) && (
           <Badge variant="secondary" className="text-xs">
             <Package className="h-3 w-3 mr-1" />
             Grocery
           </Badge>
         )}
-        {trip.json.orders.some(o => o.has_coffee) && (
+        {trip.json.orders?.some(o => o.has_coffee) && (
           <Badge variant="secondary" className="text-xs">☕ Coffee</Badge>
         )}
-        {trip.json.orders.some(o => o.has_hot_food) && (
+        {trip.json.orders?.some(o => o.has_hot_food) && (
           <Badge variant="secondary" className="text-xs">🍕 Hot Food</Badge>
         )}
       </div>
