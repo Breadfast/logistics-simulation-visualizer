@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Database, Trash2, RefreshCw } from 'lucide-react';
 import { buildApiUrl } from '@/config/api';
 import { Dataset } from '@/types/dataset';
+import { useNavigate } from 'react-router-dom';
+import { Badge as StatusBadge } from '@/components/ui/badge';
 
 interface DatasetsListProps {
   onDatasetSelect?: (dataset: Dataset) => void;
@@ -12,6 +14,7 @@ interface DatasetsListProps {
 }
 
 const DatasetsList: React.FC<DatasetsListProps> = ({ onDatasetSelect, onRefresh }) => {
+  const navigate = useNavigate();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,12 +124,22 @@ const DatasetsList: React.FC<DatasetsListProps> = ({ onDatasetSelect, onRefresh 
                 key={dataset.id}
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                <div className="flex-1">
+                <div className="flex-1 flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <h4 className="font-medium text-dark-brand">{dataset.name}</h4>
                     <Badge variant="secondary" className="bg-gray-100 text-secondary-brand border border-gray-300">
                       ID: {dataset.id}
                     </Badge>
+                    {dataset.status && (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-700 border border-blue-300">
+                        Status: {dataset.status}
+                      </Badge>
+                    )}
+                    {dataset.drivers_count > 0 ? (
+                      <StatusBadge className="bg-green-100 text-green-700 border border-green-300">Has Drivers</StatusBadge>
+                    ) : (
+                      <StatusBadge className="bg-yellow-100 text-yellow-700 border border-yellow-300">No Drivers</StatusBadge>
+                    )}
                   </div>
                   <div className="text-sm text-secondary-brand mt-1">
                     Created: {new Date(dataset.created_at).toLocaleDateString()}
@@ -146,6 +159,24 @@ const DatasetsList: React.FC<DatasetsListProps> = ({ onDatasetSelect, onRefresh 
                       className="border-primary-brand text-primary-brand hover:bg-primary-brand hover:text-white"
                     >
                       Select
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/datasets/${dataset.id}/upload-drivers`)}
+                    className="border-primary-brand text-primary-brand hover:bg-primary-brand hover:text-white"
+                  >
+                    Upload Drivers
+                  </Button>
+                  {dataset.drivers_count > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/datasets/${dataset.id}/drivers`)}
+                      className="border-blue-500 text-blue-700 hover:bg-blue-50 hover:text-blue-900"
+                    >
+                      View Drivers
                     </Button>
                   )}
                   <Button

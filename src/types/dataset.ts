@@ -7,6 +7,7 @@ export interface Dataset {
   lat: number;
   log: number;
   orders_count?: number;
+  status?: string; // Added status field
 }
 
 export interface DatasetImportRequest {

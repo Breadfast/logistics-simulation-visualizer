@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Clock } from 'lucide-react';
 import { Trip } from '@/types/trip';
-import TimelineHeader from './timeline/TimelineHeader';
 import TimelineAxis from './timeline/TimelineAxis';
 import DriverLane from './timeline/DriverLane';
 import TimelineLegend from './timeline/TimelineLegend';
@@ -14,6 +13,7 @@ import {
   getExpandedTimeRange
 } from './timeline/timelineUtils';
 import TimelinePlaybackControls from './timeline/TimelinePlaybackControls';
+import TimelineHeader from './timeline/TimelineHeader';
 
 interface TimelineViewProps {
   trips: Trip[];

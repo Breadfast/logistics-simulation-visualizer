@@ -7,7 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { buildApiUrl } from '@/config/api';
 
-const DriverImportForm: React.FC = () => {
+interface DriverImportFormProps {
+  datasetId: number;
+}
+
+const DriverImportForm: React.FC<DriverImportFormProps> = ({ datasetId }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -33,9 +37,15 @@ const DriverImportForm: React.FC = () => {
       setIsLoading(false);
       return;
     }
+    if (!datasetId) {
+      setError('No dataset selected.');
+      setIsLoading(false);
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('dataset_id', String(datasetId));
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', buildApiUrl('/drivers/import'));

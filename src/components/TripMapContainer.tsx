@@ -10,15 +10,20 @@ import { AlertCircle, Loader2, Map, Calendar, Info } from 'lucide-react';
 import TimelinePlaybackControls from './timeline/TimelinePlaybackControls';
 import { buildApiUrl, MAPBOX_TOKEN } from '@/config/api';
 import { Trip } from '@/types/trip';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import TickStateView from './TickStateView';
+import { Tick } from '@/types/tick';
 
 const TripMapContainer = () => {
   const [selectedRun, setSelectedRun] = useState<number | null>(null);
-  const [currentTick, setCurrentTick] = useState(1);
-  const [maxTick] = useState(300); // This should come from API
+  const [ticks, setTicks] = useState<Tick[]>([]);
+  const [selectedTickIdx, setSelectedTickIdx] = useState(0); // index in ticks array
+  const [tickState, setTickState] = useState<Tick | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTicks, setIsLoadingTicks] = useState(false);
+  const [isLoadingTickState, setIsLoadingTickState] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'map' | 'timeline'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'timeline' | 'tickstate'>('map');
 
   // Playback controls (play/pause, speed)
   const [playing, setPlaying] = useState(false);
@@ -27,103 +32,44 @@ const TripMapContainer = () => {
   // Reference to playback interval
   const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Dummy data for fallback
-  const dummyTrips: Trip[] = [
-    {
-      id: 24092,
-      run_id: 1,
-      tick: 1,
-      created_at: "2025-04-10T00:00:00.000Z",
-      updated_at: "2025-04-10T00:00:00.000Z",
-      latency: 0,
-      dead_head_time: 0,
-      assignment_time: "2025-04-10T00:00:00.000Z",
-      json: {
-        orders: [
-          {
-            id: 34643006,
-            tasks: [
-              {
-                id: "pickup_34643006_1",
-                lat: 29.974462,
-                lon: 31.278598,
-                service: ["Grocery"],
-                end_time: "2025-04-10T00:03:33.000Z",
-                ready_at: "2025-04-09T23:56:26.000Z",
-                late_time: 0.0,
-                task_type: "pickup" as const,
-                start_time: "2025-04-10T00:02:32.999Z"
-              },
-              {
-                id: "delivery_34643006_1",
-                lat: 29.964791,
-                lon: 31.275774,
-                service: ["Grocery"],
-                end_time: "2025-04-10T00:12:42.200Z",
-                late_time: 0.0,
-                task_type: "delivery" as const,
-                start_time: "2025-04-10T00:10:44.600Z"
-              }
-            ],
-            customer: { lat: 29.964791, lon: 31.275774 },
-            end_time: "2025-04-10T00:12:42.200Z",
-            late_time: 0.0,
-            has_coffee: false,
-            start_time: "2025-04-10T00:02:32.999Z",
-            has_grocery: true,
-            received_at: "2025-04-09T23:46:26.000Z",
-            segment_sla: "2025-04-10T00:31:26.000Z",
-            has_hot_food: false,
-            deadline_date: "2025-04-10T00:31:26.000Z"
-          }
-        ],
-        distance: 5.073,
-        duration: 774,
-        end_time: "2025-04-10T00:15:27.800Z",
-        driver_id: 1627358,
-        late_time: 0.0,
-        start_time: "2025-04-10T00:02:32.999Z",
-        order_of_events: ["start_fp", "pickup_34643006_1", "delivery_34643006_1", "end_fp"]
-      }
-    }
-  ];
-
-  // --- Fetch trips for a given run/tick ---
-  const fetchTrips = async (runId: number, tickNo: number) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      console.log(`Fetching trips for run_id=${runId}, tick=${tickNo}`);
-      const response = await fetch(buildApiUrl(`/trips?run_id=${runId}&tick=${tickNo}`));
-      if (!response.ok) throw new Error('Failed to fetch trips');
-      const data = await response.json();
-      const tripsData = Array.isArray(data) ? data : [];
-      setTrips(tripsData);
-    } catch (err) {
-      setError('Failed to load trips. Using dummy data.');
-      setTrips(dummyTrips);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // --- Fetch trips when run/tick change ---
+  // Fetch ticks for selected run
   useEffect(() => {
-    if (selectedRun) {
-      fetchTrips(selectedRun, currentTick);
-    }
-    // Cleanup playback interval if needed (don't pause automatically)
-    if (playbackIntervalRef.current) {
-      clearInterval(playbackIntervalRef.current);
-      playbackIntervalRef.current = null;
-    }
-    // Remove: setPlaying(false); // Don't auto-pause when tick/run change
-  }, [selectedRun, currentTick]);
-  
+    if (!selectedRun) return;
+    setIsLoadingTicks(true);
+    setError(null);
+    fetch(buildApiUrl(`/runs/${selectedRun}/ticks`))
+      .then(res => res.json())
+      .then((data: Tick[]) => {
+        setTicks(data);
+        setSelectedTickIdx(0);
+      })
+      .catch(() => setError('Failed to load ticks'))
+      .finally(() => setIsLoadingTicks(false));
+  }, [selectedRun]);
+
+  // Fetch tick state and trips for selected tick
+  useEffect(() => {
+    if (!ticks.length) return;
+    const tick = ticks[selectedTickIdx];
+    if (!tick) return;
+    setIsLoadingTickState(true);
+    setError(null);
+    Promise.all([
+      fetch(buildApiUrl(`/ticks/${tick.id}`)).then(res => res.json()),
+      fetch(buildApiUrl(`/ticks/${tick.id}/trips`)).then(res => res.json())
+    ])
+      .then(([tickData, tripsData]) => {
+        setTickState(tickData);
+        setTrips(tripsData);
+      })
+      .catch(() => setError('Failed to load tick state or trips'))
+      .finally(() => setIsLoadingTickState(false));
+  }, [ticks, selectedTickIdx]);
+
   // --- Playback effect: auto-advance ticks when playing ---
   useEffect(() => {
     // If not playing or already on last tick, stop and cleanup interval
-    if (!playing || currentTick >= maxTick) {
+    if (!playing || selectedTickIdx >= ticks.length - 1) {
       if (playbackIntervalRef.current) {
         clearInterval(playbackIntervalRef.current);
         playbackIntervalRef.current = null;
@@ -131,76 +77,74 @@ const TripMapContainer = () => {
       return;
     }
     // If current tick has no trips, pause playback (informational)
-    // if (trips.length === 0) {
-    //   setPlaying(false);
-    //   if (playbackIntervalRef.current) {
-    //     clearInterval(playbackIntervalRef.current);
-    //     playbackIntervalRef.current = null;
-    //   }
-    //   return;
-    // }
+    if (trips.length === 0) {
+      setPlaying(false);
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      return;
+    }
     // Advance ticks at variable speed
     const interval = setInterval(() => {
-      setCurrentTick((prevTick) => {
-        if (prevTick < maxTick) {
-          return prevTick + 1;
+      setSelectedTickIdx((prevIdx) => {
+        if (prevIdx < ticks.length - 1) {
+          return prevIdx + 1;
         } else {
           setPlaying(false);
           if (playbackIntervalRef.current) {
             clearInterval(playbackIntervalRef.current);
             playbackIntervalRef.current = null;
           }
-          return prevTick;
+          return prevIdx;
         }
       });
     }, 1000 / playbackSpeed);
     playbackIntervalRef.current = interval;
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, playbackSpeed, currentTick, maxTick]);
+  }, [playing, playbackSpeed, selectedTickIdx, ticks.length]);
 
   // --- Keyboard controls for playback (optional) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (activeView !== 'map' || isLoading) return;
+      if (activeTab !== 'map' || isLoadingTicks || isLoadingTickState) return;
       if (e.code === 'Space') {
         setPlaying((p) => !p);
       }
       if (e.code === 'ArrowRight') {
-        setCurrentTick((tick) => Math.min(tick + 1, maxTick));
+        setSelectedTickIdx((idx) => Math.min(idx + 1, ticks.length - 1));
       }
       if (e.code === 'ArrowLeft') {
-        setCurrentTick((tick) => Math.max(1, tick - 1));
+        setSelectedTickIdx((idx) => Math.max(0, idx - 1));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeView, isLoading, maxTick]);
+  }, [activeTab, isLoadingTicks, isLoadingTickState, ticks.length]);
 
-  // --- Run/tick select handlers ---
+  // Handlers
   const handleRunChange = (runId: number) => {
     setSelectedRun(runId);
-    setCurrentTick(1); // Reset to first tick on run change
-    setPlaying(false); // Pausing playback on run change is sensible UX
+    setTicks([]);
+    setSelectedTickIdx(0);
+    setTickState(null);
+    setTrips([]);
   };
-  const handleTickChange = (tick: number) => {
-    setCurrentTick(tick);
-    // Do not forcibly pause here! User might want to scrub while playing
-    // setPlaying(false); // Remove this line
-  };
+  const handleTickChange = (idx: number) => setSelectedTickIdx(idx);
 
   // --- Playback controls handlers ---
   const handlePlay = () => {
     // Only play if there are trips at this tick & not at last tick
-    if (trips.length > 0 && currentTick < maxTick) setPlaying(true);
+    if (trips.length > 0 && selectedTickIdx < ticks.length - 1) setPlaying(true);
   };
   const handlePause = () => setPlaying(false);
   const handleRewind = () => {
-    setCurrentTick((tick) => Math.max(1, tick - 1));
+    setSelectedTickIdx((idx) => Math.max(0, idx - 1));
     setPlaying(false);
   };
   const handleFastForward = () => {
-    setCurrentTick((tick) => Math.min(maxTick, tick + 1));
+    setSelectedTickIdx((idx) => Math.min(ticks.length - 1, idx + 1));
     setPlaying(false);
   };
   const handleSpeedChange = (speed: number) => {
@@ -210,136 +154,98 @@ const TripMapContainer = () => {
   // Trip fallback: does this tick have any trips?
   const tickHasTrips = trips.length > 0;
 
-  // --- Render ---
-
+  // UI
   if (!selectedRun) {
-    return (
-      <RunSelectionScreen
-        selectedRun={selectedRun}
-        onRunChange={handleRunChange}
-      />
-    );
+    return <RunSelectionScreen selectedRun={selectedRun} onRunChange={handleRunChange} />;
   }
-
+  if (isLoadingTicks) {
+    return <div className="flex items-center justify-center h-screen">Loading ticks...</div>;
+  }
+  if (error) {
+    return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>;
+  }
+  const tick = ticks[selectedTickIdx];
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Controls Sidebar */}
+      {/* Sidebar */}
       <div className="w-80 bg-white shadow-lg overflow-y-auto">
         <div className="p-4 border-b">
           <h2 className="text-xl font-bold">Trip Run</h2>
         </div>
         <div className="p-4 space-y-4">
-          <RunSelector
-            selectedRun={selectedRun}
-            onRunChange={handleRunChange}
-          />
-          <TickNavigator
-            currentTick={currentTick}
-            maxTick={maxTick}
-            onTickChange={handleTickChange}
-            isLoading={isLoading}
-          />
-          {/* View Toggle */}
-          <Card className="p-3">
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-700">View Mode</div>
-              <div className="flex gap-2">
+          <RunSelector selectedRun={selectedRun} onRunChange={handleRunChange} />
+              {/* Redesigned Tick Switcher with Primary Brand Colors */}
+          <Card className="p-5 rounded-xl border border-primary-brand bg-primary-brand/5 shadow-sm">
+            <div className="flex flex-col gap-3 items-center">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-primary-brand font-semibold text-base tracking-wide">Tick</span>
+                <span className="bg-primary-brand text-white rounded px-2 py-0.5 text-xs font-bold border border-primary-brand">
+                  {selectedTickIdx + 1} / {ticks.length}
+                </span>
+              </div>
+              {tick && (
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-gray-500">Current Time:</span>
+                  <span className="bg-primary-brand text-white rounded px-2 py-0.5 text-xs font-mono shadow">
+                    {new Date(tick.current_time).toLocaleString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-3 w-full justify-center">
                 <Button
-                  variant={activeView === 'map' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveView('map')}
-                  className="flex-1"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleTickChange(Math.max(selectedTickIdx - 1, 0))}
+                  disabled={selectedTickIdx === 0}
+                  className="transition hover:bg-primary-brand/10 focus-ring-primary-brand border-primary-brand"
+                  aria-label="Previous Tick"
                 >
-                  <Map className="h-4 w-4 mr-1" />
-                  Map
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
                 </Button>
+                <input
+                  type="range"
+                  min={0}
+                  max={ticks.length - 1}
+                  value={selectedTickIdx}
+                  onChange={e => handleTickChange(Number(e.target.value))}
+                  className="w-40 accent-primary-brand cursor-pointer border-primary-brand"
+                  style={{ background: 'linear-gradient(90deg, #AA0082 0%, #E754A6 100%)' }}
+                  aria-label="Tick Slider"
+                />
                 <Button
-                  variant={activeView === 'timeline' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveView('timeline')}
-                  className="flex-1"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleTickChange(Math.min(selectedTickIdx + 1, ticks.length - 1))}
+                  disabled={selectedTickIdx === ticks.length - 1}
+                  className="transition hover:bg-primary-brand/10 focus-ring-primary-brand border-primary-brand"
+                  aria-label="Next Tick"
                 >
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Timeline
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
                 </Button>
               </div>
-            </div>
-          </Card>
-          {/* Error and loading */}
-          {error && (
-            <Card className="p-3 bg-yellow-50 border-yellow-200">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm">{error}</span>
-              </div>
-            </Card>
-          )}
-          {isLoading && (
-            <Card className="p-3">
-              <div className="flex items-center gap-2 text-blue-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Loading trips...</span>
-              </div>
-            </Card>
-          )}
-          <Card className="p-3">
-            <div className="text-sm">
-              <div className="font-medium mb-1">Debug Info:</div>
-              <div>Trips loaded: {trips.length}</div>
-              <div>Current tick: {currentTick}</div>
-              <div>Selected run: {selectedRun}</div>
-              <div>Playing: {playing ? "Yes" : "No"}</div>
+              <div className="text-xs text-gray-400 mt-1">Use slider or arrows to navigate ticks</div>
             </div>
           </Card>
         </div>
       </div>
-
-      {/* Main Content Container */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Only show controls above the map view, not in the timeline! */}
-        {activeView === 'map' && (
-          <div className="p-4 bg-white border-b flex flex-col sm:flex-row items-center justify-between gap-4">
-            <TimelinePlaybackControls
-              currentTick={currentTick}
-              maxTick={maxTick}
-              minTick={1}
-              playing={playing}
-              speed={playbackSpeed}
-              onPlay={handlePlay}
-              onPause={handlePause}
-              onRewind={handleRewind}
-              onFastForward={handleFastForward}
-              onTickChange={handleTickChange}
-              onSpeedChange={handleSpeedChange}
-              // Only disable Play and the slider if loading or no trips;
-              // always keep arrows enabled except at tick limits!
-              disabled={isLoading}
-              disablePlayButton={isLoading}
-              disableSlider={isLoading}
-            />
-            {/* If no trips at this tick, show informational message */}
-            {!tickHasTrips && !isLoading && (
-              <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 rounded px-3 py-2">
-                <Info className="h-4 w-4" />
-                No trips data for this tick.
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex-1 overflow-hidden">
-          {activeView === 'map' ? (
+        <Tabs value={activeTab} onValueChange={v => setActiveTab(v as any)} className="flex-1 flex flex-col">
+          <TabsList className="flex flex-row gap-2 p-2 bg-gray-100">
+            <TabsTrigger value="map">Map</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="tickstate">Tick State</TabsTrigger>
+          </TabsList>
+          <TabsContent value="map" className="flex-1 overflow-hidden">
             <TripMap trips={trips} mapboxToken={MAPBOX_TOKEN} />
-          ) : (
-            <div className="p-4 h-full overflow-y-auto">
-              {/* Timeline does NOT get playback controls! */}
-              <TimelineView
-                trips={trips}
-                currentTick={currentTick}
-                onTickChange={setCurrentTick}
-              />
-            </div>
-          )}
-        </div>
+          </TabsContent>
+          <TabsContent value="timeline" className="flex-1 overflow-hidden">
+            <TimelineView trips={trips} currentTick={selectedTickIdx + 1} />
+          </TabsContent>
+          <TabsContent value="tickstate" className="flex-1 overflow-y-auto">
+            <TickStateView tick={tickState} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

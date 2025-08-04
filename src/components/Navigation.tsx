@@ -16,19 +16,6 @@ const Navigation = () => {
             </Link>
             
             <div className="flex items-center space-x-4">
-              <Link to="/">
-                <Button
-                  variant={location.pathname === '/' ? 'default' : 'ghost'}
-                  className={`flex items-center gap-2 ${
-                    location.pathname === '/' 
-                      ? 'bg-primary-brand hover:bg-primary-brand/90 text-white' 
-                      : 'text-dark-brand hover:text-primary-brand hover:bg-gray-50'
-                  }`}
-                >
-                  <Map className="h-4 w-4" />
-                  Visualization
-                </Button>
-              </Link>
               
               <Link to="/datasets">
                 <Button
@@ -44,7 +31,7 @@ const Navigation = () => {
                 </Button>
               </Link>
 
-              <Link to="/drivers">
+              {/* <Link to="/drivers">
                 <Button
                   variant={location.pathname === '/drivers' ? 'default' : 'ghost'}
                   className={`flex items-center gap-2 ${
@@ -56,7 +43,7 @@ const Navigation = () => {
                   <Users className="h-4 w-4" />
                   Drivers
                 </Button>
-              </Link>
+              </Link> */}
 
               <Link to="/simulation">
                 <Button
@@ -69,6 +56,19 @@ const Navigation = () => {
                 >
                   <PlayCircle className="h-4 w-4" />
                   Simulation
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button
+                  variant={location.pathname === '/' ? 'default' : 'ghost'}
+                  className={`flex items-center gap-2 ${
+                    location.pathname === '/' 
+                      ? 'bg-primary-brand hover:bg-primary-brand/90 text-white' 
+                      : 'text-dark-brand hover:text-primary-brand hover:bg-gray-50'
+                  }`}
+                >
+                  <Map className="h-4 w-4" />
+                  Visualization
                 </Button>
               </Link>
             </div>

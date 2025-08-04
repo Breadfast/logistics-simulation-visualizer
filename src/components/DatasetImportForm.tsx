@@ -13,51 +13,19 @@ interface DatasetImportFormProps {
 
 const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }) => {
   const [datasetName, setDatasetName] = useState('');
-  const [fpId, setFpId] = useState('');
-  const [fpIdOptions, setFpIdOptions] = useState<string[]>([]);
-  const [lat, setLat] = useState('');
-  const [lon, setLon] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingFpIds, setIsFetchingFpIds] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setSelectedFile(file);
-    setFpId('');
-    setFpIdOptions([]);
-    if (!file) return;
-    setIsFetchingFpIds(true);
     setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await fetch(buildApiUrl('/datasets/fp_ids'), {
-        method: 'POST',
-        body: formData,
-      });
-      if (!response.ok) {
-        let errorMsg = 'Failed to fetch FP IDs';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch {}
-        throw new Error(errorMsg);
-      }
-      const data = await response.json();
-      setFpIdOptions(data.fp_ids || []);
-      if ((data.fp_ids || []).length === 1) {
-        setFpId(data.fp_ids[0]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch FP IDs');
-    } finally {
-      setIsFetchingFpIds(false);
-    }
+    setSuccess(null);
+    setUploadProgress(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,16 +41,6 @@ const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }
       setIsLoading(false);
       return;
     }
-    if (!fpId.trim()) {
-      setError('Please select an FP ID');
-      setIsLoading(false);
-      return;
-    }
-    if (!lat.trim() || !lon.trim()) {
-      setError('Please enter both latitude and longitude');
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const formData = new FormData();
@@ -90,9 +48,6 @@ const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }
       if (datasetName.trim()) {
         formData.append('dataset_name', datasetName.trim());
       }
-      formData.append('fp_id', fpId.trim());
-      formData.append('lat', lat.trim());
-      formData.append('lon', lon.trim());
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -103,10 +58,6 @@ const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }
               const data = JSON.parse(xhr.responseText);
               setSuccess(`Import started successfully! Job ID: ${data.job_id}`);
               setDatasetName('');
-              setFpId('');
-              setFpIdOptions([]);
-              setLat('');
-              setLon('');
               setSelectedFile(null);
               setUploadProgress(null);
               if (fileInputRef.current) fileInputRef.current.value = '';
@@ -172,61 +123,11 @@ const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }
               type="file"
               accept=".csv,text/csv"
               ref={fileInputRef}
-              disabled={isLoading || isFetchingFpIds}
+              disabled={isLoading}
               required
               onChange={handleFileChange}
               className="focus:ring-2 focus:ring-primary-brand focus:border-transparent"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="fp-id" className="text-dark-brand">FP ID *</Label>
-            <select
-              id="fp-id"
-              value={fpId}
-              onChange={e => setFpId(e.target.value)}
-              disabled={isLoading || isFetchingFpIds || fpIdOptions.length === 0}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-brand focus:border-transparent"
-            >
-              <option value="" disabled>
-                {isFetchingFpIds ? 'Loading FP IDs...' : 'Select FP ID'}
-              </option>
-              {fpIdOptions.map(id => (
-                <option key={id} value={id}>{id}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="lat" className="text-dark-brand">Latitude *</Label>
-              <Input
-                id="lat"
-                type="number"
-                step="any"
-                placeholder="29.975509"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                disabled={isLoading}
-                required
-                className="focus:ring-2 focus:ring-primary-brand focus:border-transparent"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lon" className="text-dark-brand">Longitude *</Label>
-              <Input
-                id="lon"
-                type="number"
-                step="any"
-                placeholder="31.276793"
-                value={lon}
-                onChange={(e) => setLon(e.target.value)}
-                disabled={isLoading}
-                required
-                className="focus:ring-2 focus:ring-primary-brand focus:border-transparent"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -273,9 +174,9 @@ const DatasetImportForm: React.FC<DatasetImportFormProps> = ({ onImportSuccess }
 
           <Button
             type="submit"
-            disabled={isLoading || isFetchingFpIds || !selectedFile || !fpId || !lat || !lon}
+            disabled={isLoading || !selectedFile}
             className={`w-full ${
-              isLoading || isFetchingFpIds || !selectedFile || !fpId || !lat || !lon
+              isLoading || !selectedFile
                 ? 'bg-secondary-brand text-white'
                 : 'bg-primary-brand hover:bg-primary-brand/90 text-white'
             }`}
