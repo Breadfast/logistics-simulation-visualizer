@@ -6,7 +6,8 @@ import { buildApiUrl } from '@/config/api';
 
 interface Driver {
   id: number;
-  fp_id: string;
+  hr_id: number;
+  fulfilment_point: string;
   // Add other driver fields as needed
 }
 
@@ -75,8 +76,8 @@ const DatasetDrivers: React.FC = () => {
                 <TableBody>
                   {drivers.map(driver => (
                     <TableRow key={driver.id}>
-                      <TableCell>{driver.id}</TableCell>
-                      <TableCell>{driver.fp_id}</TableCell>
+                      <TableCell>{driver.hr_id}</TableCell>
+                      <TableCell>{driver.fulfilment_point}</TableCell>
                       <TableCell>
                         {checkins
                           .filter(c => c.driver_id === driver.id)
