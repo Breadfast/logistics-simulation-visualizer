@@ -84,6 +84,7 @@ export const getTimePosition = (eventTime: string, minTime: string, maxTime: str
 
 export const formatTime = (timeString: string): string => {
   return new Date(timeString).toLocaleTimeString('en-US', {
+    timeZone: 'UTC',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false

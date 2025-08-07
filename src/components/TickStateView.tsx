@@ -7,6 +7,33 @@ function toTitleCase(str: string) {
   return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 }
 
+// Helper to format date strings in UTC
+function formatDateValue(value: any): string {
+  if (typeof value !== 'string') return String(value);
+  
+  // Check if it looks like an ISO date string
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+    try {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('en-US', {
+          timeZone: 'UTC',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+    } catch (e) {
+      // If parsing fails, return original value
+    }
+  }
+  
+  return value;
+}
+
 interface TickStateViewProps {
   tick: Tick | null;
 }
@@ -51,7 +78,7 @@ const renderTable = (data: any[], section: string) => {
                       : '')
                   }
                 >
-                  {row[key] !== undefined ? String(row[key]) : ''}
+                  {row[key] !== undefined ? formatDateValue(row[key]) : ''}
                 </td>
               ))}
             </tr>

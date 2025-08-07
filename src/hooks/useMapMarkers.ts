@@ -100,7 +100,7 @@ export const useMapMarkers = (
               <p class="text-xs text-gray-600">Order: ${order.id}</p>
               <p class="text-xs text-gray-600">Driver: ${trip.json.driver_id}</p>
               <p class="text-xs text-gray-600">Service: ${task.service.join(', ')}</p>
-              <p class="text-xs text-gray-600">Time: ${new Date(task.start_time).toLocaleTimeString()}</p>
+              <p class="text-xs text-gray-600">Time: ${new Date(task.start_time).toLocaleTimeString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           `);
 

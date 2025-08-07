@@ -11,8 +11,12 @@ const Navigation = () => {
       <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="text-xl font-bold text-primary-brand">
-              Route Optimizer
+            <Link to="/" className="flex items-center">
+              <img 
+                src="/Breadfast logo.png" 
+                alt="Breadfast Logo" 
+                className="h-8 w-auto"
+              />
             </Link>
             
             <div className="flex items-center space-x-4">

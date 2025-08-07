@@ -26,14 +26,16 @@ const EnhancedTripCard: React.FC<EnhancedTripCardProps> = ({
   };
 
   const formatTime = (timeString: string) => {
-    return new Date(timeString).toLocaleTimeString([], {
+    return new Date(timeString).toLocaleTimeString('en-US', {
+      timeZone: 'UTC',
       hour: '2-digit',
       minute: '2-digit',
     });
   };
 
   const formatDate = (timeString: string) => {
-    return new Date(timeString).toLocaleDateString([], {
+    return new Date(timeString).toLocaleDateString('en-US', {
+      timeZone: 'UTC',
       month: 'short',
       day: 'numeric',
     });

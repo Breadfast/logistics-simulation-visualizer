@@ -187,7 +187,7 @@ const TripMapContainer = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs text-gray-500">Current Time:</span>
                   <span className="bg-primary-brand text-white rounded px-2 py-0.5 text-xs font-mono shadow">
-                    {new Date(tick.current_time).toLocaleString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })}
+                    {new Date(tick.current_time).toLocaleString('en-US', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hour12: true, month: 'short', day: 'numeric' })}
                   </span>
                 </div>
               )}
